@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .bg-ffc300 { background-color: #ffc300; }
+  .text-ffc300 { color: #ffc300; }
+}
