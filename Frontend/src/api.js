@@ -1,4 +1,8 @@
-const BASE = `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api`;
+export const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? "https://quick-campus.onrender.com" : "http://localhost:5000");
+
+const BASE = `${API_BASE_URL}/api`;
 
 const headers = () => ({
   "Content-Type": "application/json",

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaGraduationCap, FaUpload, FaCheckCircle, FaCreditCard, FaMobileAlt, FaUniversity } from "react-icons/fa";
+import { API_BASE_URL } from "../api";
 
 const branches = ["Computer Science", "Mechanical", "Civil", "Electrical", "Electronics", "Chemical", "IT"];
 const departments = ["Computer Science", "Mathematics", "Physics", "Chemistry", "English", "Management"];
@@ -91,7 +92,7 @@ export default function AdmissionForm() {
         documents: Object.entries(uploadedDocs).map(([name, val]) => ({ name, fileUrl: val.fileUrl })),
         paymentStatus: "paid", paymentAmount: totalFee, paymentMethod: payment.method, paymentDate: new Date(), transactionId,
       };
-      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/admission/apply`, {
+      const res = await fetch(`${API_BASE_URL}/api/admission/apply`, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
       const data = await res.json();

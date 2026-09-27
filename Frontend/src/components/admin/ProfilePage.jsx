@@ -15,9 +15,7 @@ export default function AdminProfilePage() {
   useEffect(() => {
     Promise.all([
       api.get("/admin/users").then((d) => setUsers(Array.isArray(d) ? d : [])),
-      fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/student/profile`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      }).then((r) => r.json()).then((d) => { setAdmin(d); setForm(d); }),
+      api.get("/student/profile").then((d) => { setAdmin(d); setForm(d); }),
     ]).finally(() => setLoading(false));
   }, []);
 

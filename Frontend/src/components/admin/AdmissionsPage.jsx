@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { FaCheck, FaTimes, FaEye, FaCopy } from "react-icons/fa";
+import { API_BASE_URL } from "../../api";
 
 const s = {
   page: { padding: "24px" },
@@ -40,7 +41,7 @@ export default function AdmissionsPage() {
   const fetchAdmissions = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/admission/all`, {
+      const res = await fetch(`${API_BASE_URL}/api/admission/all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -57,7 +58,7 @@ export default function AdmissionsPage() {
   const approve = async (id) => {
     setActionLoading(id + "approve");
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/admission/approve/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/admission/approve/${id}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -77,7 +78,7 @@ export default function AdmissionsPage() {
   const reject = async (id) => {
     setActionLoading(id + "reject");
     try {
-      await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/admission/reject/${id}`, {
+      await fetch(`${API_BASE_URL}/api/admission/reject/${id}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });

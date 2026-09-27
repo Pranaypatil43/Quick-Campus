@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaGraduationCap, FaUserShield, FaChalkboardTeacher, FaUserGraduate, FaArrowLeft, FaEye, FaEyeSlash } from "react-icons/fa";
+import { API_BASE_URL } from "../api";
 
 const roleConfig = {
   admin:   { label: "Admin",   icon: <FaUserShield />,        accent: "#4f46e5", bg: "linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%)", redirect: "/admin", canRegister: true },
@@ -28,7 +29,7 @@ export default function LoginPage() {
     try {
       const endpoint = isRegister ? "register" : "login";
       const body = isRegister ? { ...form, role } : { email: form.email, password: form.password, role };
-      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/auth/${endpoint}`, {
+      const res = await fetch(`${API_BASE_URL}/api/auth/${endpoint}`, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
       const data = await res.json();
