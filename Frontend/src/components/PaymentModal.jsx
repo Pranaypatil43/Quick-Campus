@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { FaCreditCard, FaMobileAlt, FaUniversity, FaLock } from "react-icons/fa";
+import { api } from "../api";
 
 export default function PaymentModal({ fee, onClose, onSuccess }) {
   const [method, setMethod] = useState("");
@@ -18,7 +19,6 @@ export default function PaymentModal({ fee, onClose, onSuccess }) {
     setProcessing(true);
     await new Promise((r) => setTimeout(r, 1500));
     if (fee._id) {
-      const { api } = await import("../api");
       await api.put(`/student/fees/${fee._id}/pay`);
     }
     setProcessing(false);

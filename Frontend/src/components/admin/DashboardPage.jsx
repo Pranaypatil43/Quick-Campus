@@ -1,42 +1,60 @@
-import React from "react";
-import { FaUserGraduate, FaChalkboardTeacher, FaClipboardList, FaMoneyBillWave, FaClock, FaBed, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import React, { useEffect, useState } from "react";
+import { FaUserGraduate, FaChalkboardTeacher, FaClipboardList, FaMoneyBillWave, FaClock, FaBed } from "react-icons/fa";
+import { api } from "../../api";
 
 const ACCENT = "#4f46e5";
 
-const stats = [
-  { label: "Total Students", value: "248", icon: <FaUserGraduate />, color: "#4f46e5", bg: "#eef2ff", change: "+12 this month" },
-  { label: "Total Staff", value: "32", icon: <FaChalkboardTeacher />, color: "#0d9488", bg: "#f0fdfa", change: "+2 this month" },
-  { label: "Pending Admissions", value: "8", icon: <FaClipboardList />, color: "#f97316", bg: "#fff7ed", change: "Needs review" },
-  { label: "Revenue Collected", value: "₹14.8L", icon: <FaMoneyBillWave />, color: "#16a34a", bg: "#dcfce7", change: "This semester" },
-  { label: "Pending Fees", value: "23", icon: <FaClock />, color: "#dc2626", bg: "#fee2e2", change: "Students" },
-  { label: "Hostel Occupancy", value: "87%", icon: <FaBed />, color: "#7c3aed", bg: "#ede9fe", change: "174/200 rooms" },
-];
-
-const recentAdmissions = [
-  { name: "Pranay Patil", role: "Student", branch: "Computer Science", status: "approved", date: "10 Aug 2025" },
-  { name: "Sneha Kulkarni", role: "Student", branch: "Mechanical", status: "pending", date: "09 Aug 2025" },
-  { name: "Prof. Mehta", role: "Staff", branch: "Physics Dept", status: "approved", date: "08 Aug 2025" },
-  { name: "Rohan Desai", role: "Student", branch: "Civil", status: "pending", date: "07 Aug 2025" },
-  { name: "Pooja Patil", role: "Student", branch: "IT", status: "rejected", date: "06 Aug 2025" },
-];
-
-const feeStatus = [
-  { type: "Academic Fee", collected: 148000, total: 200000 },
-  { type: "Hostel Fee", collected: 87000, total: 100000 },
-  { type: "Transport Fee", collected: 32000, total: 40000 },
-];
-
 export default function DashboardPage() {
+  const [stats, setStats] = useState(null);
+  const [admissions, setAdmissions] = useState([]);
+  const [fees, setFees] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      api.get("/admin/dashboard"),
+      api.get("/admission/all"),
+      api.get("/admin/fees"),
+    ]).then(([dashData, admData, feeData]) => {
+      setStats(dashData);
+      setAdmissions(Array.isArray(admData) ? admData.slice(0, 5) : []);
+      setFees(Array.isArray(feeData) ? feeData : []);
+    }).catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div style={s.loading}>Loading dashboard...</div>;
+
+  const statCards = stats ? [
+    { label: "Total Students", value: stats.totalStudents ?? 0, icon: <FaUserGraduate />, color: "#4f46e5", bg: "#eef2ff", change: "Enrolled" },
+    { label: "Total Staff", value: stats.totalStaff ?? 0, icon: <FaChalkboardTeacher />, color: "#0d9488", bg: "#f0fdfa", change: "Active" },
+    { label: "Pending Admissions", value: stats.pendingAdmissions ?? 0, icon: <FaClipboardList />, color: "#f97316", bg: "#fff7ed", change: "Needs review" },
+    { label: "Revenue Collected", value: `₹${((stats.totalRevenue ?? 0) / 100000).toFixed(1)}L`, icon: <FaMoneyBillWave />, color: "#16a34a", bg: "#dcfce7", change: "Total collected" },
+    { label: "Pending Fees", value: stats.pendingFees ?? 0, icon: <FaClock />, color: "#dc2626", bg: "#fee2e2", change: "Students" },
+  ] : [];
+
+  // Compute fee collection by type from real data
+  const feeTypes = ["Academic", "Hostel", "Transport"];
+  const feeStatus = feeTypes.map((type) => {
+    const typeData = fees.filter((f) => f.type === type);
+    const collected = typeData.filter((f) => f.status === "paid").reduce((s, f) => s + (f.amount || 0), 0);
+    const total = typeData.reduce((s, f) => s + (f.amount || 0), 0);
+    return { type, collected, total };
+  }).filter((f) => f.total > 0);
+
   return (
     <div style={s.page}>
       <div>
         <h2 style={s.title}>Live Dashboard</h2>
-        <p style={s.sub}>QuickCampus — Real-time overview · {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
+        <p style={s.sub}>
+          QuickCampus — Real-time overview ·{" "}
+          {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+        </p>
       </div>
 
       {/* Stats Grid */}
       <div style={s.statsGrid}>
-        {stats.map((st) => (
+        {statCards.map((st) => (
           <div key={st.label} style={s.statCard}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
@@ -54,37 +72,47 @@ export default function DashboardPage() {
         {/* Recent Admissions */}
         <div style={s.card}>
           <h3 style={s.cardTitle}>Recent Admissions</h3>
-          {recentAdmissions.map((a, i) => (
-            <div key={i} style={s.admRow}>
-              <div style={s.admAvatar}>{a.name.charAt(0)}</div>
-              <div style={{ flex: 1 }}>
-                <p style={s.admName}>{a.name}</p>
-                <p style={s.admMeta}>{a.role} · {a.branch}</p>
+          {admissions.length === 0 ? (
+            <p style={s.empty}>No admissions yet</p>
+          ) : (
+            admissions.map((a) => (
+              <div key={a._id} style={s.admRow}>
+                <div style={s.admAvatar}>{a.fullName?.charAt(0)}</div>
+                <div style={{ flex: 1 }}>
+                  <p style={s.admName}>{a.fullName}</p>
+                  <p style={s.admMeta}>{a.role} · {a.branch || a.department || "-"}</p>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <span style={s.badge(a.status)}>{a.status}</span>
+                  <p style={s.admDate}>{new Date(a.createdAt).toLocaleDateString("en-IN")}</p>
+                </div>
               </div>
-              <div style={{ textAlign: "right" }}>
-                <span style={s.badge(a.status)}>{a.status}</span>
-                <p style={s.admDate}>{a.date}</p>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Fee Collection */}
         <div style={s.card}>
           <h3 style={s.cardTitle}>Fee Collection Status</h3>
-          {feeStatus.map((f) => {
-            const pct = Math.round((f.collected / f.total) * 100);
-            return (
-              <div key={f.type} style={{ marginBottom: "20px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-                  <span style={{ fontSize: "14px", fontWeight: "600", color: "#1e1b4b" }}>{f.type}</span>
-                  <span style={{ fontSize: "13px", color: "#6b7280" }}>₹{f.collected.toLocaleString()} / ₹{f.total.toLocaleString()}</span>
+          {feeStatus.length === 0 ? (
+            <p style={s.empty}>No fee records yet</p>
+          ) : (
+            feeStatus.map((f) => {
+              const pct = f.total > 0 ? Math.round((f.collected / f.total) * 100) : 0;
+              return (
+                <div key={f.type} style={{ marginBottom: "20px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                    <span style={{ fontSize: "14px", fontWeight: "600", color: "#1e1b4b" }}>{f.type} Fee</span>
+                    <span style={{ fontSize: "13px", color: "#6b7280" }}>
+                      ₹{f.collected.toLocaleString()} / ₹{f.total.toLocaleString()}
+                    </span>
+                  </div>
+                  <div style={s.bar}><div style={{ ...s.fill, width: `${pct}%` }} /></div>
+                  <p style={{ fontSize: "12px", color: "#9ca3af", marginTop: "4px" }}>{pct}% collected</p>
                 </div>
-                <div style={s.bar}><div style={{ ...s.fill, width: `${pct}%` }} /></div>
-                <p style={{ fontSize: "12px", color: "#9ca3af", marginTop: "4px" }}>{pct}% collected</p>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </div>
     </div>
@@ -93,6 +121,8 @@ export default function DashboardPage() {
 
 const s = {
   page: { display: "flex", flexDirection: "column", gap: "20px" },
+  loading: { textAlign: "center", padding: "60px", color: "#6b7280", fontSize: "15px" },
+  empty: { fontSize: "13px", color: "#9ca3af", textAlign: "center", padding: "20px 0" },
   title: { fontSize: "22px", fontWeight: "900", color: "#1e1b4b", margin: 0 },
   sub: { fontSize: "13px", color: "#6b7280", margin: "4px 0 0" },
   statsGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px,1fr))", gap: "14px" },

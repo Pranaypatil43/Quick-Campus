@@ -91,7 +91,7 @@ export default function AdmissionForm() {
         documents: Object.entries(uploadedDocs).map(([name, val]) => ({ name, fileUrl: val.fileUrl })),
         paymentStatus: "paid", paymentAmount: totalFee, paymentMethod: payment.method, paymentDate: new Date(), transactionId,
       };
-      const res = await fetch("http://localhost:5000/api/admission/apply", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/admission/apply`, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
       const data = await res.json();

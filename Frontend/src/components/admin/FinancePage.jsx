@@ -1,30 +1,35 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaMoneyBillWave, FaDownload } from "react-icons/fa";
+import { api } from "../../api";
 
 const ACCENT = "#4f46e5";
 
-const feeData = [
-  { name: "Pranay Patil", roll: "SE-CS-001", type: "Academic", amount: 60000, status: "paid", date: "2025-07-15" },
-  { name: "Rahul Sharma", roll: "SE-CS-002", type: "Academic", amount: 60000, status: "pending", date: "-" },
-  { name: "Priya Mehta", roll: "SE-CS-003", type: "Academic", amount: 60000, status: "paid", date: "2025-07-10" },
-  { name: "Amit Joshi", roll: "SE-CS-004", type: "Hostel", amount: 24000, status: "paid", date: "2025-07-12" },
-  { name: "Sneha Kulkarni", roll: "SE-CS-005", type: "Academic", amount: 60000, status: "pending", date: "-" },
-  { name: "Rohan Desai", roll: "SE-CS-006", type: "Transport", amount: 8000, status: "paid", date: "2025-07-18" },
-  { name: "Pooja Patil", roll: "SE-CS-007", type: "Academic", amount: 60000, status: "paid", date: "2025-07-20" },
-  { name: "Vikram Singh", roll: "SE-CS-008", type: "Hostel", amount: 24000, status: "pending", date: "-" },
-];
-
 export default function FinancePage() {
+  const [feeData, setFeeData] = useState([]);
   const [filter, setFilter] = useState("all");
-  const filtered = filter === "all" ? feeData : feeData.filter((f) => f.status === filter || f.type.toLowerCase() === filter);
+  const [loading, setLoading] = useState(true);
 
-  const totalCollected = feeData.filter((f) => f.status === "paid").reduce((s, f) => s + f.amount, 0);
-  const totalPending = feeData.filter((f) => f.status === "pending").reduce((s, f) => s + f.amount, 0);
+  useEffect(() => {
+    api.get("/admin/fees")
+      .then((data) => setFeeData(Array.isArray(data) ? data : []))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = filter === "all"
+    ? feeData
+    : feeData.filter((f) => f.status === filter || f.type?.toLowerCase() === filter);
+
+  const totalCollected = feeData.filter((f) => f.status === "paid").reduce((s, f) => s + (f.amount || 0), 0);
+  const totalPending = feeData.filter((f) => f.status === "pending").reduce((s, f) => s + (f.amount || 0), 0);
 
   return (
     <div style={s.page}>
       <div style={s.header}>
-        <div><h2 style={s.title}>Finance Reports</h2><p style={s.sub}>Fee collection overview</p></div>
+        <div>
+          <h2 style={s.title}>Finance Reports</h2>
+          <p style={s.sub}>Fee collection overview</p>
+        </div>
         <button style={s.exportBtn}><FaDownload style={{ marginRight: "6px" }} />Export Report</button>
       </div>
 
@@ -32,40 +37,52 @@ export default function FinancePage() {
         {[
           { label: "Total Collected", val: `₹${totalCollected.toLocaleString()}`, color: "#16a34a" },
           { label: "Pending Amount", val: `₹${totalPending.toLocaleString()}`, color: "#dc2626" },
-          { label: "Paid Students", val: feeData.filter(f => f.status === "paid").length, color: ACCENT },
-          { label: "Pending Students", val: feeData.filter(f => f.status === "pending").length, color: "#f97316" },
-        ].map((s_) => (
-          <div key={s_.label} style={s.statCard}>
-            <p style={{ ...s.statVal, color: s_.color }}>{s_.val}</p>
-            <p style={s.statLabel}>{s_.label}</p>
+          { label: "Paid Students", val: feeData.filter((f) => f.status === "paid").length, color: ACCENT },
+          { label: "Pending Students", val: feeData.filter((f) => f.status === "pending").length, color: "#f97316" },
+        ].map((st) => (
+          <div key={st.label} style={s.statCard}>
+            <p style={{ ...s.statVal, color: st.color }}>{st.val}</p>
+            <p style={s.statLabel}>{st.label}</p>
           </div>
         ))}
       </div>
 
       <div style={s.filters}>
         {["all", "paid", "pending", "academic", "hostel", "transport"].map((f) => (
-          <button key={f} style={s.filterBtn(filter === f)} onClick={() => setFilter(f)}>{f.charAt(0).toUpperCase() + f.slice(1)}</button>
+          <button key={f} style={s.filterBtn(filter === f)} onClick={() => setFilter(f)}>
+            {f.charAt(0).toUpperCase() + f.slice(1)}
+          </button>
         ))}
       </div>
 
       <div style={s.card}>
-        <table style={s.table}>
-          <thead>
-            <tr>{["Student", "Roll No", "Fee Type", "Amount", "Status", "Date"].map((h) => <th key={h} style={s.th}>{h}</th>)}</tr>
-          </thead>
-          <tbody>
-            {filtered.map((f, i) => (
-              <tr key={i}>
-                <td style={s.td}>{f.name}</td>
-                <td style={s.td}>{f.roll}</td>
-                <td style={s.td}>{f.type}</td>
-                <td style={{ ...s.td, fontWeight: "700" }}>₹{f.amount.toLocaleString()}</td>
-                <td style={s.td}><span style={s.badge(f.status)}>{f.status}</span></td>
-                <td style={s.td}>{f.date}</td>
+        {loading ? (
+          <p style={s.empty}>Loading...</p>
+        ) : filtered.length === 0 ? (
+          <p style={s.empty}>No fee records found</p>
+        ) : (
+          <table style={s.table}>
+            <thead>
+              <tr>
+                {["Student", "Email", "Fee Type", "Amount", "Status", "Date"].map((h) => (
+                  <th key={h} style={s.th}>{h}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filtered.map((f, i) => (
+                <tr key={f._id || i}>
+                  <td style={s.td}>{f.studentId?.name || "—"}</td>
+                  <td style={s.td}>{f.studentId?.email || "—"}</td>
+                  <td style={s.td}>{f.type}</td>
+                  <td style={{ ...s.td, fontWeight: "700" }}>₹{(f.amount || 0).toLocaleString()}</td>
+                  <td style={s.td}><span style={s.badge(f.status)}>{f.status}</span></td>
+                  <td style={s.td}>{f.paidAt ? new Date(f.paidAt).toLocaleDateString("en-IN") : f.status === "paid" ? "—" : "Pending"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
@@ -84,6 +101,7 @@ const s = {
   filters: { display: "flex", gap: "8px", flexWrap: "wrap" },
   filterBtn: (active) => ({ padding: "7px 16px", borderRadius: "20px", border: `1px solid ${active ? ACCENT : "#e5e7eb"}`, background: active ? ACCENT : "#fff", color: active ? "#fff" : "#6b7280", fontWeight: "600", cursor: "pointer", fontSize: "13px" }),
   card: { background: "#fff", borderRadius: "12px", padding: "20px", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", border: "1px solid #e5e7eb", overflowX: "auto" },
+  empty: { textAlign: "center", padding: "40px", color: "#9ca3af", fontSize: "14px" },
   table: { width: "100%", borderCollapse: "collapse" },
   th: { background: "#f8fafc", color: "#374151", padding: "10px 14px", textAlign: "left", fontSize: "13px", fontWeight: "700", borderBottom: "2px solid #e5e7eb" },
   td: { padding: "10px 14px", borderBottom: "1px solid #f3f4f6", fontSize: "13px", color: "#374151" },

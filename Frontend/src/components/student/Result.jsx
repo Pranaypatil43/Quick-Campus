@@ -1,44 +1,38 @@
-import React, { useState } from "react";
-
-const results = [
-  {
-    semester: "Semester 4",
-    percentage: "78.5",
-    result: "pass",
-    subjects: [
-      { name: "Data Structures", marks: 82, maxMarks: 100, grade: "A" },
-      { name: "Computer Networks", marks: 75, maxMarks: 100, grade: "B+" },
-      { name: "Operating Systems", marks: 80, maxMarks: 100, grade: "A" },
-      { name: "Database Management", marks: 78, maxMarks: 100, grade: "B+" },
-      { name: "Mathematics III", marks: 77, maxMarks: 100, grade: "B+" },
-    ],
-  },
-  {
-    semester: "Semester 3",
-    percentage: "82.0",
-    result: "distinction",
-    subjects: [
-      { name: "Digital Electronics", marks: 85, maxMarks: 100, grade: "A+" },
-      { name: "Data Communication", marks: 80, maxMarks: 100, grade: "A" },
-      { name: "Discrete Mathematics", marks: 82, maxMarks: 100, grade: "A" },
-      { name: "OOP with Java", marks: 84, maxMarks: 100, grade: "A+" },
-      { name: "Mathematics II", marks: 79, maxMarks: 100, grade: "B+" },
-    ],
-  },
-];
+import React, { useState, useEffect } from "react";
+import { api } from "../../api";
 
 const ACCENT = "#f97316";
 
 export default function Result() {
+  const [results, setResults] = useState([]);
   const [open, setOpen] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get("/student/results")
+      .then((data) => setResults(Array.isArray(data) ? data : []))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div style={s.empty}>Loading results...</div>;
+
+  if (results.length === 0)
+    return (
+      <div style={s.page}>
+        <h2 style={s.title}>Examination Results</h2>
+        <div style={s.empty}>No results available yet.</div>
+      </div>
+    );
 
   return (
     <div style={s.page}>
       <h2 style={s.title}>Examination Results</h2>
       {results.map((r, i) => {
-        const total = r.subjects.reduce((sum, sub) => sum + sub.marks, 0);
+        const total = r.subjects?.reduce((sum, sub) => sum + (sub.marks || 0), 0) || r.totalMarks || 0;
+        const maxTotal = r.subjects?.reduce((sum, sub) => sum + (sub.maxMarks || 100), 0) || 0;
         return (
-          <div key={i} style={s.card}>
+          <div key={r._id || i} style={s.card}>
             <div style={s.cardTop} onClick={() => setOpen(open === i ? -1 : i)}>
               <div>
                 <span style={s.sem}>{r.semester}</span>
@@ -49,7 +43,7 @@ export default function Result() {
                 <span style={{ color: "#9ca3af", fontSize: "18px" }}>{open === i ? "▲" : "▼"}</span>
               </div>
             </div>
-            {open === i && (
+            {open === i && r.subjects?.length > 0 && (
               <div style={{ marginTop: "16px" }}>
                 <table style={s.table}>
                   <thead>
@@ -60,14 +54,14 @@ export default function Result() {
                       <tr key={j}>
                         <td style={s.td}>{sub.name}</td>
                         <td style={s.td}>{sub.marks}</td>
-                        <td style={s.td}>{sub.maxMarks}</td>
-                        <td style={s.td}><span style={s.grade(sub.grade)}>{sub.grade}</span></td>
+                        <td style={s.td}>{sub.maxMarks || 100}</td>
+                        <td style={s.td}><span style={s.grade(sub.grade)}>{sub.grade || "—"}</span></td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
                 <div style={s.footer}>
-                  <span>Total Marks: <b>{total}/{r.subjects.length * 100}</b></span>
+                  <span>Total Marks: <b>{total}{maxTotal ? `/${maxTotal}` : ""}</b></span>
                   <span>Percentage: <b>{r.percentage}%</b></span>
                 </div>
               </div>
@@ -82,6 +76,7 @@ export default function Result() {
 const s = {
   page: { display: "flex", flexDirection: "column", gap: "16px" },
   title: { fontSize: "20px", fontWeight: "800", color: "#1e1b4b" },
+  empty: { background: "#fff", borderRadius: "12px", padding: "40px", textAlign: "center", color: "#9ca3af", fontSize: "14px" },
   card: { background: "#fff", borderRadius: "12px", padding: "20px", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", border: "1px solid #e5e7eb" },
   cardTop: { display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" },
   sem: { fontSize: "16px", fontWeight: "700", color: "#1e1b4b", marginRight: "12px" },

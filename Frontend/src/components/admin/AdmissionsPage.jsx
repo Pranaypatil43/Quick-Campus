@@ -40,7 +40,7 @@ export default function AdmissionsPage() {
   const fetchAdmissions = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/admission/all", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/admission/all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -57,7 +57,7 @@ export default function AdmissionsPage() {
   const approve = async (id) => {
     setActionLoading(id + "approve");
     try {
-      const res = await fetch(`http://localhost:5000/api/admission/approve/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/admission/approve/${id}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -77,7 +77,7 @@ export default function AdmissionsPage() {
   const reject = async (id) => {
     setActionLoading(id + "reject");
     try {
-      await fetch(`http://localhost:5000/api/admission/reject/${id}`, {
+      await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/admission/reject/${id}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });

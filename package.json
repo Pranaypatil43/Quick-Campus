@@ -1,4 +1,13 @@
 {
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix Frontend\"",
+    "server": "npm run dev --prefix server",
+    "client": "npm run dev --prefix Frontend",
+    "build": "npm run build --prefix Frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.13",
     "tailwindcss": "^4.1.13"

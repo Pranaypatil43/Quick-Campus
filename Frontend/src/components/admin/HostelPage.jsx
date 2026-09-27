@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { FaBed, FaTimes, FaEye, FaThLarge, FaList } from "react-icons/fa";
 
 const token = () => localStorage.getItem("token");
-const BASE = "http://localhost:5000/api";
+const BASE = `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api`;
 
 // Build room grid from allotted requests
 function buildRoomGrid(requests) {
